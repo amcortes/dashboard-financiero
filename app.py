@@ -10,40 +10,46 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
 
-import pandas as pd
-
-@st.cache_data(ttl=86400)
 def obtener_mercado_continuo():
-    try:
-        # Enlace directo a un listado limpio de tickers del Mercado Continuo
-        url = "https://raw.githubusercontent.com/datasets/spain-mercado-continuo/master/data/tickers.csv"
-        df = pd.read_csv(url)
-        
-        diccionario_activos = {}
-        for _, fila in df.iterrows():
-            # Extraemos el ticker y el nombre de la empresa
-            ticker = str(fila['ticker']).strip()
-            nombre = str(fila['name']).strip()
-            
-            # Aseguramos el sufijo .MC para Yahoo Finance
-            if not ticker.endswith('.MC'):
-                ticker_yf = f"{ticker}.MC"
-            else:
-                ticker_yf = ticker
-                
-            nombre_menu = f"{nombre} ({ticker_yf})"
-            diccionario_activos[nombre_menu] = ticker_yf
-            
-        return diccionario_activos
-    except Exception as e:
-        print(f"Error alternativo: {e}")
-        return {"Banco (SAN.MC)": "SAN.MC", "BBVA (BBVA.MC)": "BBVA.MC", "Telefónica (TEF.MC)": "TEF.MC"}
+    # Lista interna con los principales activos del Mercado Continuo español
+    return {
+        "Acciona (ANA.MC)": "ANA.MC",
+        "Acerinox (ACX.MC)": "ACX.MC",
+        "Aena (AENA.MC)": "AENA.MC",
+        "Amadeus (AMS.MC)": "AMS.MC",
+        "Applus (APPS.MC)": "APPS.MC",
+        "Arima (ARM.MC)": "ARM.MC",
+        "Banco Sabadell (SAB.MC)": "SAB.MC",
+        "Banco Santander (SAN.MC)": "SAN.MC",
+        "Bankinter (BKT.MC)": "BKT.MC",
+        "BBVA (BBVA.MC)": "BBVA.MC",
+        "CaixaBank (CABK.MC)": "CABK.MC",
+        "Cellnex (CLNX.MC)": "CLNX.MC",
+        "Enagás (ENG.MC)": "ENG.MC",
+        "Endesa (ELE.MC)": "ELE.MC",
+        "Ercros (ECR.MC)": "ECR.MC",
+        "Faes Farma (FAE.MC)": "FAE.MC",
+        "Ferrovial (FER.MC)": "FER.MC",
+        "Fluidra (FDR.MC)": "FDR.MC",
+        "Grifols (GRF.MC)": "GRF.MC",
+        "Iberdrola (IBE.MC)": "IBE.MC",
+        "Inditex (ITX.MC)": "ITX.MC",
+        "Indra (IDR.MC)": "IDR.MC",
+        "Inmobiliaria Colonial (COL.MC)": "COL.MC",
+        "Logista (LOG.MC)": "LOG.MC",
+        "Mapfre (MAP.MC)": "MAP.MC",
+        "Meliá Hotels (MEL.MC)": "MEL.MC",
+        "Naturgy (NTGY.MC)": "NTGY.MC",
+        "PharmaMar (PHM.MC)": "PHM.MC",
+        "Repsol (REP.MC)": "REP.MC",
+        "Sacyr (SCYR.MC)": "SCYR.MC",
+        "Solaria (SLR.MC)": "SLR.MC",
+        "Telefónica (TEF.MC)": "TEF.MC",
+        "Unicaja Banco (UNI.MC)": "UNI.MC"
+    }
 
-# Llamamos a la función para cargar los activos dinámicos
+# Asignamos la lista al menú lateral
 opciones_tickers = obtener_mercado_continuo()
-st.write(opciones_tickers)
-
-
 
 # 📊 Configuración de la página web
 st.set_page_config(page_title="Dashboard Financiero", layout="wide")
