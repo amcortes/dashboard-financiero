@@ -196,6 +196,7 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown("---")
         
         # 🧮 CÁLCULO DE COMPARACIÓN CUÁDRUPLE (Rendimiento Acumulado %)
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         s1 = datos1['Close'].iloc[:, 0] if isinstance(datos1['Close'], pd.DataFrame) else datos1['Close']
         s2 = datos2['Close'].iloc[:, 0] if isinstance(datos2['Close'], pd.DataFrame) else datos2['Close']
         s_ib = datos_ibex['Close'].iloc[:, 0] if isinstance(datos_ibex['Close'], pd.DataFrame) else datos_ibex['Close']
@@ -211,6 +212,7 @@ with st.spinner("Descargando datos en vivo..."):
         
         # Calculamos el rendimiento acumulado partiendo de base 0%
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
         st.markdown('<div class="css-card">', unsafe_allow_html=True)
