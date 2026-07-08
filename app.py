@@ -143,27 +143,28 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown("---")
         
         # 🧮 CÁLCULO DE COMPARACIÓN CUÁDRUPLE (Rendimiento Acumulado %)
-        precios_cierre2 = datos2[('Close', ticker2)]
-        precios_ibex = datos_ibex['Close']
-        if isinstance(precios_ibex, pd.DataFrame):
-            precios_ibex = precios_ibex.iloc[:, 0]
+        # Nos aseguramos de extraer el cierre de cada uno como una Serie limpia de Pandas
+        s1 = datos1['Close'].iloc[:, 0] if isinstance(datos1['Close'], pd.DataFrame) else datos1['Close']
+        s2 = datos2['Close'].iloc[:, 0] if isinstance(datos2['Close'], pd.DataFrame) else datos2['Close']
+        s_ib = datos_ibex['Close'].iloc[:, 0] if isinstance(datos_ibex['Close'], pd.DataFrame) else datos_ibex['Close']
+        s_st = datos_stoxx['Close'].iloc[:, 0] if isinstance(datos_stoxx['Close'], pd.DataFrame) else datos_stoxx['Close']
             
-        # 🤝 Unimos las 4 series de forma robusta alineando por sus fechas
-        df_comparativo = pd.concat([c1, c2, c_ib, c_st], axis=1)
+        # 🤝 Unimos las 4 series alineando automáticamente por sus fechas
+        df_comparativo = pd.concat([s1, s2, s_ib, s_st], axis=1)
         
-        # Asignamos nombres limpios a las columnas del gráfico
+        # Asignamos los nombres correctos a las columnas
         df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
         
-        # Eliminamos días festivos o sin datos comunes
+        # Eliminamos filas con datos incompletos (como días festivos locales)
         df_comparativo = df_comparativo.dropna()
         
-        # Base 0% para todas las series financieras
+        # Calculamos el rendimiento acumulado partiendo de base 0%
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
         st.subheader("📈 Análisis de Rendimiento Acumulado")
         st.markdown("*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
-        
+       
     else:
         st.error("Error al descargar los datos de mercado. Revisa la conexión o los símbolos de los activos.")
