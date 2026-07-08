@@ -56,7 +56,7 @@ opciones_tickers = obtener_mercado_continuo()
 st.set_page_config(page_title="Dashboard Financiero", layout="wide")
 
 # 🏛️ Banner de título
-st.title("📊 Monitor de Renta Variable y Mercados")
+st.title("📊 Monitor de Renta Variable y Mercados - Test")
 st.markdown("---")
 
 # 🟢 Panel de Control (Barra lateral para los alumnos)
