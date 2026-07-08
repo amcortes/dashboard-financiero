@@ -71,7 +71,7 @@ ticker2 = opciones_tickers[seleccion2]
 
 st.sidebar.markdown("---")
 
-# 📅 Configuración de Rango Temporal (Sin la opción de 1 Día)
+# 📅 Configuración de Rango Temporal
 opciones_tiempo = {
     "1 Semana": 7,
     "1 Mes": 30,
@@ -87,7 +87,7 @@ dias_restar = opciones_tiempo[rango_elegido]
 with st.spinner("Descargando datos en vivo..."):
     fecha_fin = datetime.now()
     
-    # Margen de seguridad: si piden 1 semana (7 días), descargamos al menos 10 días atrás para cubrir festivos/fines de semana
+    # Margen de seguridad para cubrir fines de semana y festivos
     dias_descarga = max(dias_restar, 10)
     fecha_inicio = fecha_fin - timedelta(days=dias_descarga)
     
@@ -99,7 +99,7 @@ with st.spinner("Descargando datos en vivo..."):
     
     if not (datos1.empty or datos2.empty or datos_ibex.empty or datos_stoxx.empty):
         
-        # Función auxiliar modificada para saltar volatilidad en rangos cortos
+        # Función auxiliar para extraer métricas clave de un DataFrame de yfinance
         def calcular_metricas(df, ticker_sym, rango):
             cierre = df[('Close', ticker_sym)] if ('Close', ticker_sym) in df.columns else df['Close']
             if isinstance(cierre, pd.DataFrame):
@@ -177,16 +177,40 @@ with st.spinner("Descargando datos en vivo..."):
         df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
         df_comparativo = df_comparativo.dropna()
         
-        # Filtramos el dataframe para que el gráfico use estrictamente el rango elegido por el usuario
+        # Filtramos el dataframe para usar estrictamente el rango elegido
         df_comparativo = df_comparativo.tail(dias_restar)
         
-        # Calculamos el rendimiento acumulado partiendo de base 0% en la primera fecha visible del gráfico
+        # Calculamos el rendimiento acumulado partiendo de base 0%
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
         st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
         st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
+        
+        st.markdown("---")
+        
+        # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
+        st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
+        st.markdown("*Análisis detallado de la distribución de los rendimientos acumulados (%) que se muestran en el gráfico superior.*")
+        
+        # Generar tabla descriptiva con Pandas y transponerla para mejor lectura visual en pantalla
+        df_descriptivo = df_rendimiento.describe().T
+        
+        # Traducir los nombres técnicos de Pandas a términos legibles y financieros
+        df_descriptivo = df_descriptivo.rename(columns={
+            "count": "Días Analizados",
+            "mean": "Rendimiento Medio (%)",
+            "std": "Desviación Estándar (%)",
+            "min": "Rendimiento Mínimo (%)",
+            "25%": "Percentil 25 (%)",
+            "50%": "Mediana (%)",
+            "75%": "Percentil 75 (%)",
+            "max": "Rendimiento Máximo (%)"
+        })
+        
+        # Dar formato de dos decimales a los datos numéricos de la tabla
+        st.dataframe(df_descriptivo.style.format("{:,.2f}"))
         
     else:
         st.error("Error al descargar los datos de mercado. Revisa la conexión o los símbolos de los activos.")
