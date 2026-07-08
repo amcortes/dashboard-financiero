@@ -3,7 +3,7 @@
 Created on Wed Jul  8 11:46:59 2026
 
 @author: anton
-""
+"""
 
 import streamlit as st
 import yfinance as yf
