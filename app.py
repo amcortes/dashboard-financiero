@@ -62,81 +62,69 @@ st.markdown("---")
 # 🟢 Panel de Control (Barra lateral para los alumnos)
 st.sidebar.header("🕹️ Panel de Control")
 
-seleccion = st.sidebar.selectbox("Selecciona un Activo para analizar:", list(opciones_tickers.keys()))
-ticker = opciones_tickers[seleccion]
+# Primer activo (el principal para las tarjetas métricas)
+seleccion1 = st.sidebar.selectbox("Selecciona el Activo Principal:", list(opciones_tickers.keys()), index=7) # Por defecto Santander
+ticker1 = opciones_tickers[seleccion1]
 
-# 🔄 Carga automática e instantánea al cambiar el desplegable
+# Segundo activo para la comparación
+seleccion2 = st.sidebar.selectbox("Selecciona el Activo a Comparar:", list(opciones_tickers.keys()), index=9) # Por defecto BBVA
+ticker2 = opciones_tickers[seleccion2]
+
+# 🔄 Carga automática al cambiar cualquier desplegable
 with st.spinner("Descargando datos en vivo..."):
     # 📅 Calcular fechas (últimos 12 meses)
     fecha_fin = datetime.now()
     fecha_inicio = fecha_fin - timedelta(days=365)
     
-    # 📥 Descarga de datos mediante yfinance (Activo + IBEX 35)
-    datos = yf.download(ticker, start=fecha_inicio, end=fecha_fin)
+    # 📥 Descarga de datos mediante yfinance (Activo 1 + Activo 2 + IBEX 35)
+    datos1 = yf.download(ticker1, start=fecha_inicio, end=fecha_fin)
+    datos2 = yf.download(ticker2, start=fecha_inicio, end=fecha_fin)
     datos_ibex = yf.download("^IBEX", start=fecha_inicio, end=fecha_fin)
     
-    if not datos.empty and not datos_ibex.empty:
-        # 📈 Extracción de precios y cálculos financieros del activo principal
-        precios_cierre = datos[('Close', ticker)]
-        precio_actual = float(precios_cierre.iloc[-1])
-        precio_anterior = float(precios_cierre.iloc[-2])
+    if not datos1.empty and not datos2.empty and not datos_ibex.empty:
+        # 📈 Datos financieros del ACTIVO PRINCIPAL (para las tarjetas métricas)
+        precios_cierre1 = datos1[('Close', ticker1)]
+        precio_actual = float(precios_cierre1.iloc[-1])
+        precio_anterior = float(precios_cierre1.iloc[-2])
         
-        # Rendimiento diario
         var_diaria = (precio_actual - precio_anterior) / precio_anterior
+        max_52 = float(precios_cierre1.max())
+        min_52 = float(precios_cierre1.min())
         
-        # Máximos y mínimos de 52 semanas
-        max_52 = float(precios_cierre.max())
-        min_52 = float(precios_cierre.min())
-        
-        # Volatilidad histórica anualizada (Rendimientos logarítmicos)
-        rendimientos_log = np.log(precios_cierre / precios_cierre.shift(1)).dropna()
+        rendimientos_log = np.log(precios_cierre1 / precios_cierre1.shift(1)).dropna()
         vol_anual = float(rendimientos_log.std() * np.sqrt(252)) * 100
         
-        # 🔵 Bloque de Tarjetas Informativas
+        # 🔵 Bloque de Tarjetas Informativas (del Activo Principal)
+        st.subheader(f"📌 Resumen en vivo de {seleccion1}")
         col1, col2, col3, col4 = st.columns(4)
         
-        col1.metric(
-            label="💰 Precio Actual", 
-            value=f"{precio_actual:,.2f} €"
-        )
-        
-        col2.metric(
-            label="📊 Var. Diaria (%)", 
-            value=f"{var_diaria * 100:+.2f}%",
-            delta=f"{var_diaria * 100:+.2f}%"
-        )
-        
-        col3.metric(
-            label="📈 Máx / Mín (52 sem)", 
-            value=f"{max_52:,.2f} € / {min_52:,.2f} €"
-        )
-        
-        col4.metric(
-            label="📉 Volatilidad Anual", 
-            value=f"{vol_anual:.2f}%"
-        )
+        col1.metric(label="💰 Precio Actual", value=f"{precio_actual:,.2f} €")
+        col2.metric(label="📊 Var. Diaria (%)", value=f"{var_diaria * 100:+.2f}%", delta=f"{var_diaria * 100:+.2f}%")
+        col3.metric(label="📈 Máx / Mín (52 sem)", value=f"{max_52:,.2f} € / {min_52:,.2f} €")
+        col4.metric(label="📉 Volatilidad Anual", value=f"{vol_anual:.2f}%")
         
         st.markdown("---")
         
-        # 🧮 CÁLCULO DE COMPARACIÓN (Rendimiento Acumulado %)
-        # Extraemos cierres del IBEX
+        # 🧮 CÁLCULO DE COMPARACIÓN TRIPLE (Rendimiento Acumulado %)
+        precios_cierre2 = datos2[('Close', ticker2)]
         precios_ibex = datos_ibex['Close']
         if isinstance(precios_ibex, pd.DataFrame):
             precios_ibex = precios_ibex.iloc[:, 0]
             
-        # Alineamos fechas comunes para evitar errores en el gráfico
+        # Unimos las 3 series alineando fechas
         df_comparativo = pd.DataFrame({
-            seleccion: precios_cierre,
+            seleccion1: precios_cierre1,
+            seleccion2: precios_cierre2,
             "IBEX 35": precios_ibex
         }).dropna()
         
-        # Calculamos el rendimiento desde el primer día de la serie (base 0%)
+        # Base 0% para el análisis de rendimiento relativo
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
-        # 🟡 Bloque de Gráfico Interactivo de Comparación
-        st.subheader(f"📈 Rendimiento Relativo: {seleccion} vs IBEX 35")
-        st.markdown("*Muestra la evolución en porcentaje (%) partiendo desde el mismo punto inicial.*")
+        # 🟡 Bloque de Gráfico Interactivo Triple
+        st.subheader(f"📈 Análisis Comparativo de Rendimiento")
+        st.markdown(f"*Evolución en porcentaje (%) partiendo desde el mismo punto inicial para **{seleccion1}**, **{seleccion2}** e **IBEX 35**.*")
         st.line_chart(df_rendimiento)
         
     else:
-        st.error("No se pudieron obtener datos para este ticker o para el IBEX 35. Revisa la conexión.")
+        st.error("Error al descargar uno de los activos. Verifica que los mercados estén abiertos o la conexión.")
