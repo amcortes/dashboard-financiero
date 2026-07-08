@@ -196,7 +196,6 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown("---")
         
         # 🧮 CÁLCULO DE COMPARACIÓN CUÁDRUPLE (Rendimiento Acumulado %)
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         s1 = datos1['Close'].iloc[:, 0] if isinstance(datos1['Close'], pd.DataFrame) else datos1['Close']
         s2 = datos2['Close'].iloc[:, 0] if isinstance(datos2['Close'], pd.DataFrame) else datos2['Close']
         s_ib = datos_ibex['Close'].iloc[:, 0] if isinstance(datos_ibex['Close'], pd.DataFrame) else datos_ibex['Close']
@@ -212,17 +211,18 @@ with st.spinner("Descargando datos en vivo..."):
         
         # Calculamos el rendimiento acumulado partiendo de base 0%
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
-        st.markdown('</div>', unsafe_allow_html=True)
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
         st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.line_chart(df_rendimiento)
         st.markdown('</div>', unsafe_allow_html=True)
         
         # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("*Análisis detallado de la distribución de los rendimientos acumulados (%) que se muestran en el gráfico superior.*")
         
         # Generar tabla descriptiva con Pandas y transponerla para mejor lectura visual en pantalla
