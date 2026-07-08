@@ -50,6 +50,7 @@ def obtener_mercado_continuo():
 
 # Llamamos a la función para cargar los activos dinámicos
 opciones_tickers = obtener_mercado_continuo()
+st.write(opciones_tickers)
 
 
 
