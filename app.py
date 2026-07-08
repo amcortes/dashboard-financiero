@@ -9,6 +9,7 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
+import pandas as pd
 
 def obtener_mercado_continuo():
     # Lista interna con los principales activos del Mercado Continuo español
@@ -70,11 +71,12 @@ with st.spinner("Descargando datos en vivo..."):
     fecha_fin = datetime.now()
     fecha_inicio = fecha_fin - timedelta(days=365)
     
-    # 📥 Descarga de datos mediante yfinance
+    # 📥 Descarga de datos mediante yfinance (Activo + IBEX 35)
     datos = yf.download(ticker, start=fecha_inicio, end=fecha_fin)
+    datos_ibex = yf.download("^IBEX", start=fecha_inicio, end=fecha_fin)
     
-    if not datos.empty:
-        # 📈 Extracción de precios y cálculos financieros
+    if not datos.empty and not datos_ibex.empty:
+        # 📈 Extracción de precios y cálculos financieros del activo principal
         precios_cierre = datos[('Close', ticker)]
         precio_actual = float(precios_cierre.iloc[-1])
         precio_anterior = float(precios_cierre.iloc[-2])
@@ -88,7 +90,7 @@ with st.spinner("Descargando datos en vivo..."):
         
         # Volatilidad histórica anualizada (Rendimientos logarítmicos)
         rendimientos_log = np.log(precios_cierre / precios_cierre.shift(1)).dropna()
-        vol_anual = float(rendimientos_log.std() * np.sqrt(252)) * 100  # Multiplicado por 100 para mostrar porcentaje correcto
+        vol_anual = float(rendimientos_log.std() * np.sqrt(252)) * 100
         
         # 🔵 Bloque de Tarjetas Informativas
         col1, col2, col3, col4 = st.columns(4)
@@ -116,9 +118,25 @@ with st.spinner("Descargando datos en vivo..."):
         
         st.markdown("---")
         
-        # 🟡 Bloque de Gráfico Interactivo
-        st.subheader(f"📈 Evolución Histórica de {seleccion}")
-        st.line_chart(precios_cierre.rename("Precio de Cierre"))
+        # 🧮 CÁLCULO DE COMPARACIÓN (Rendimiento Acumulado %)
+        # Extraemos cierres del IBEX
+        precios_ibex = datos_ibex['Close']
+        if isinstance(precios_ibex, pd.DataFrame):
+            precios_ibex = precios_ibex.iloc[:, 0]
+            
+        # Alineamos fechas comunes para evitar errores en el gráfico
+        df_comparativo = pd.DataFrame({
+            seleccion: precios_cierre,
+            "IBEX 35": precios_ibex
+        }).dropna()
+        
+        # Calculamos el rendimiento desde el primer día de la serie (base 0%)
+        df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
+        
+        # 🟡 Bloque de Gráfico Interactivo de Comparación
+        st.subheader(f"📈 Rendimiento Relativo: {seleccion} vs IBEX 35")
+        st.markdown("*Muestra la evolución en porcentaje (%) partiendo desde el mismo punto inicial.*")
+        st.line_chart(df_rendimiento)
         
     else:
-        st.error("No se pudieron obtener datos para este ticker. Revisa la conexión.")
+        st.error("No se pudieron obtener datos para este ticker o para el IBEX 35. Revisa la conexión.")
