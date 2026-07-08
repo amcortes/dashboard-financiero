@@ -71,20 +71,26 @@ ticker2 = opciones_tickers[seleccion2]
 
 st.sidebar.markdown("---")
 
-# 📅 Configuración de Rango Temporal en la barra lateral
+# 📅 Configuración Ampliada de Rango Temporal
 opciones_tiempo = {
+    "1 Día": 1,
+    "1 Semana": 7,
+    "1 Mes": 30,
     "3 Meses": 90,
     "6 Meses": 180,
     "1 Año": 365,
     "5 Años": 5 * 365
 }
-rango_elegido = st.sidebar.selectbox("Selecciona el Rango Temporal:", list(opciones_tiempo.keys()), index=2) # Por defecto 1 Año
+rango_elegido = st.sidebar.selectbox("Selecciona el Rango Temporal:", list(opciones_tiempo.keys()), index=5) # Por defecto 1 Año
 dias_restar = opciones_tiempo[rango_elegido]
 
-# 🔄 Carga automática de datos según activos y tiempo seleccionado
+# 🔄 Carga automática de datos
 with st.spinner("Descargando datos en vivo..."):
     fecha_fin = datetime.now()
-    fecha_inicio = fecha_fin - timedelta(days=dias_restar)
+    
+    # Margen de seguridad: si piden 1 o 7 días, descargamos al menos 4 días atrás para que no falle .iloc[-2]
+    dias_descarga = max(dias_restar, 4)
+    fecha_inicio = fecha_fin - timedelta(days=dias_descarga)
     
     # Descarga de los 4 elementos necesarios
     datos1 = yf.download(ticker1, start=fecha_inicio, end=fecha_fin)
@@ -94,8 +100,8 @@ with st.spinner("Descargando datos en vivo..."):
     
     if not (datos1.empty or datos2.empty or datos_ibex.empty or datos_stoxx.empty):
         
-        # Función auxiliar para extraer métricas clave de un DataFrame de yfinance
-        def calcular_metricas(df, ticker_sym):
+        # Función auxiliar modificada para saltar volatilidad en rangos cortos
+        def calcular_metricas(df, ticker_sym, rango):
             cierre = df[('Close', ticker_sym)] if ('Close', ticker_sym) in df.columns else df['Close']
             if isinstance(cierre, pd.DataFrame):
                 cierre = cierre.iloc[:, 0]
@@ -103,18 +109,25 @@ with st.spinner("Descargando datos en vivo..."):
             act = float(cierre.iloc[-1])
             ant = float(cierre.iloc[-2])
             var = (act - ant) / ant
-            mx = float(cierre.max())
-            mn = float(cierre.min())
             
-            rend_log = np.log(cierre / cierre.shift(1)).dropna()
-            vol = float(rend_log.std() * np.sqrt(252)) * 100
-            return act, var, mx, mn, vol, cierre
+            # Saltamos métricas avanzadas si el rango es menor a 1 mes
+            if rango in ["1 Día", "1 Semana"]:
+                vol_str = "N/A"
+            else:
+                rend_log = np.log(cierre / cierre.shift(1)).dropna()
+                if len(rend_log) > 2:
+                    vol = float(rend_log.std() * np.sqrt(252)) * 100
+                    vol_str = f"{vol:.2f}%"
+                else:
+                    vol_str = "N/A"
+                    
+            return act, var, vol_str, cierre
 
         # Calcular métricas para cada uno
-        p_act1, v_dir1, mx1, mn1, vol1, c1 = calcular_metricas(datos1, ticker1)
-        p_act2, v_dir2, mx2, mn2, vol2, c2 = calcular_metricas(datos2, ticker2)
-        p_act_ib, v_dir_ib, mx_ib, mn_ib, vol_ib, c_ib = calcular_metricas(datos_ibex, "^IBEX")
-        p_act_st, v_dir_st, mx_st, mn_st, vol_st, c_st = calcular_metricas(datos_stoxx, "^STOXX50E")
+        p_act1, v_dir1, vol1, c1 = calcular_metricas(datos1, ticker1, rango_elegido)
+        p_act2, v_dir2, vol2, c2 = calcular_metricas(datos2, ticker2, rango_elegido)
+        p_act_ib, v_dir_ib, vol_ib, c_ib = calcular_metricas(datos_ibex, "^IBEX", rango_elegido)
+        p_act_st, v_dir_st, vol_st, c_st = calcular_metricas(datos_stoxx, "^STOXX50E", rango_elegido)
 
         # 🔵 BLOQUE DE TARJETAS INFORMATIVAS EN COLUMNAS COMPARATIVAS
         st.subheader(f"📋 Cuadro Comparativo de Indicadores ({rango_elegido})")
@@ -146,11 +159,11 @@ with st.spinner("Descargando datos en vivo..."):
         
         # Fila 3: Volatilidad Anual
         vo_lbl, vo_a1, vo_a2, vo_ib, vo_st = st.columns([1.5, 2, 2, 2, 2])
-        vo_lbl.markdown(f"**📉 Volatilidad ({rango_elegido})**")
-        vo_a1.metric("", f"{vol1:.2f}%")
-        vo_a2.metric("", f"{vol2:.2f}%")
-        vo_ib.metric("", f"{vol_ib:.2f}%")
-        vo_st.metric("", f"{vol_st:.2f}%")
+        vo_lbl.markdown(f"**📉 Volatilidad Anual**")
+        vo_a1.metric("", vol1)
+        vo_a2.metric("", vol2)
+        vo_ib.metric("", vol_ib)
+        vo_st.metric("", vol_st)
         
         st.markdown("---")
         
@@ -160,21 +173,20 @@ with st.spinner("Descargando datos en vivo..."):
         s_ib = datos_ibex['Close'].iloc[:, 0] if isinstance(datos_ibex['Close'], pd.DataFrame) else datos_ibex['Close']
         s_st = datos_stoxx['Close'].iloc[:, 0] if isinstance(datos_stoxx['Close'], pd.DataFrame) else datos_stoxx['Close']
             
-        # 🤝 Unimos las 4 series alineando automáticamente por sus fechas
+        # 🤝 Unimos las 4 series
         df_comparativo = pd.concat([s1, s2, s_ib, s_st], axis=1)
-        
-        # Asignamos los nombres correctos a las columnas
         df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
-        
-        # Eliminamos filas con datos incompletos
         df_comparativo = df_comparativo.dropna()
         
-        # Calculamos el rendimiento acumulado partiendo de base 0% en la primera fecha del rango elegido
+        # Filtramos el dataframe para que el gráfico solo pinte estrictamente el rango elegido por el usuario
+        df_comparativo = df_comparativo.tail(dias_restar)
+        
+        # Calculamos el rendimiento acumulado partiendo de base 0% en la primera fecha visible del gráfico
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
         st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
-        st.markdown(f"*Evolución en porcentaje (%) partiendo desde el mismo punto inicial (hace {rango_elegido}) para analizar el comportamiento relativo.*")
+        st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
         
     else:
