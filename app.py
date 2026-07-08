@@ -11,6 +11,38 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
+# 🎨 INYECCIÓN DE CSS PARA EL ESTILO FACEBOOK
+st.markdown("""
+<style>
+    /* Fondo principal de la app */
+    .stApp {
+        background-color: #F0F2F5;
+    }
+    
+    /* Fondo de la barra lateral */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+    }
+    
+    /* Títulos y textos principales */
+    h1, h2, h3, p {
+        color: #050505 !important;
+    }
+    
+    /* Botones y elementos primarios (Azul Facebook) */
+    .stButton>button {
+        background-color: #1877F2 !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    /* Tarjetas de métricas */
+    [data-testid="stMetricValue"] {
+        color: #1877F2 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 def obtener_mercado_continuo():
     # Lista interna con los principales activos del Mercado Continuo español
     return {
