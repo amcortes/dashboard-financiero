@@ -9,6 +9,49 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
+import pandas as pd
+
+@st.cache_data(ttl=86400)  # Guarda la lista en memoria durante 24h para que la web cargue ultra rápido
+def obtener_mercado_continuo():
+    try:
+        # Lee las tablas de la página de Wikipedia del Mercado Continuo
+        url = "https://es.wikipedia.org/wiki/Mercado_Continuo_Espa%C3%B1ol"
+        tablas = pd.read_html(url)
+        
+        # La tabla principal suele ser la primera o segunda (índice 0 o 1)
+        # Buscamos la tabla que contenga la columna 'Ticker' o 'Empresa'
+        df = None
+        for t in tablas:
+            if 'Ticker' in t.columns:
+                df = t
+                break
+        
+        if df is not None:
+            # Creamos el diccionario dinámico: "Nombre de Empresa (TICKER.MC)": "TICKER.MC"
+            diccionario_activos = {}
+            for _, fila in df.iterrows():
+                ticker_raw = str(fila['Ticker']).strip()
+                empresa = str(fila['Empresa']).strip()
+                
+                # Nos aseguramos de que el ticker termine en .MC (formato Yahoo Finance)
+                if not ticker_raw.endswith('.MC'):
+                    ticker_yf = f"{ticker_raw}.MC"
+                else:
+                    ticker_yf = ticker_raw
+                    
+                nombre_menu = f"{empresa} ({ticker_yf})"
+                diccionario_activos[nombre_menu] = ticker_yf
+                
+            return diccionario_activos
+    except Exception as e:
+        print(f"Error al conectar con Wikipedia: {e}")
+        # Si Wikipedia falla por algún motivo, devolvemos una lista de emergencia para que la web no se rompa
+        return {"Banco Santander (SAN.MC)": "SAN.MC", "BBVA (BBVA.MC)": "BBVA.MC", "Telefónica (TEF.MC)": "TEF.MC"}
+
+# Llamamos a la función para cargar los activos dinámicos
+opciones_tickers = obtener_mercado_continuo()
+
+
 
 # 📊 Configuración de la página web
 st.set_page_config(page_title="Dashboard Financiero", layout="wide")
@@ -19,13 +62,6 @@ st.markdown("---")
 
 # 🟢 Panel de Control (Barra lateral para los alumnos)
 st.sidebar.header("🕹️ Panel de Control")
-opciones_tickers = {
-    "Apple (AAPL)": "AAPL",
-    "Microsoft (MSFT)": "MSFT",
-    "Ibex 35 (^IBEX)": "^IBEX",
-    "S&P 500 (^GSPC)": "^GSPC",
-    "Banco Santander (SAN.MC)": "SAN.MC"
-}
 
 seleccion = st.sidebar.selectbox("Selecciona un Activo para analizar:", list(opciones_tickers.keys()))
 ticker = opciones_tickers[seleccion]
