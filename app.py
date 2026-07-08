@@ -71,9 +71,8 @@ ticker2 = opciones_tickers[seleccion2]
 
 st.sidebar.markdown("---")
 
-# 📅 Configuración Ampliada de Rango Temporal
+# 📅 Configuración de Rango Temporal (Sin la opción de 1 Día)
 opciones_tiempo = {
-    "1 Día": 1,
     "1 Semana": 7,
     "1 Mes": 30,
     "3 Meses": 90,
@@ -81,15 +80,15 @@ opciones_tiempo = {
     "1 Año": 365,
     "5 Años": 5 * 365
 }
-rango_elegido = st.sidebar.selectbox("Selecciona el Rango Temporal:", list(opciones_tiempo.keys()), index=5) # Por defecto 1 Año
+rango_elegido = st.sidebar.selectbox("Selecciona el Rango Temporal:", list(opciones_tiempo.keys()), index=4) # Por defecto 1 Año
 dias_restar = opciones_tiempo[rango_elegido]
 
 # 🔄 Carga automática de datos
 with st.spinner("Descargando datos en vivo..."):
     fecha_fin = datetime.now()
     
-    # Margen de seguridad: si piden 1 o 7 días, descargamos al menos 4 días atrás para que no falle .iloc[-2]
-    dias_descarga = max(dias_restar, 4)
+    # Margen de seguridad: si piden 1 semana (7 días), descargamos al menos 10 días atrás para cubrir festivos/fines de semana
+    dias_descarga = max(dias_restar, 10)
     fecha_inicio = fecha_fin - timedelta(days=dias_descarga)
     
     # Descarga de los 4 elementos necesarios
@@ -110,8 +109,8 @@ with st.spinner("Descargando datos en vivo..."):
             ant = float(cierre.iloc[-2])
             var = (act - ant) / ant
             
-            # Saltamos métricas avanzadas si el rango es menor a 1 mes
-            if rango in ["1 Día", "1 Semana"]:
+            # Saltamos métricas avanzadas si el rango es de 1 Semana
+            if rango in ["1 Semana"]:
                 vol_str = "N/A"
             else:
                 rend_log = np.log(cierre / cierre.shift(1)).dropna()
@@ -178,7 +177,7 @@ with st.spinner("Descargando datos en vivo..."):
         df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
         df_comparativo = df_comparativo.dropna()
         
-        # Filtramos el dataframe para que el gráfico solo pinte estrictamente el rango elegido por el usuario
+        # Filtramos el dataframe para que el gráfico use estrictamente el rango elegido por el usuario
         df_comparativo = df_comparativo.tail(dias_restar)
         
         # Calculamos el rendimiento acumulado partiendo de base 0% en la primera fecha visible del gráfico
