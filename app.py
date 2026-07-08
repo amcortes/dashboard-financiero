@@ -220,9 +220,7 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown('</div>', unsafe_allow_html=True)
         
         # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
-        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("*Análisis detallado de la distribución de los rendimientos acumulados (%) que se muestran en el gráfico superior.*")
         
         # Generar tabla descriptiva con Pandas y transponerla para mejor lectura visual en pantalla
@@ -241,7 +239,9 @@ with st.spinner("Descargando datos en vivo..."):
         })
         
         # Dar formato de dos decimales a los datos numéricos de la tabla
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.dataframe(df_descriptivo.style.format("{:,.2f}"))
-        
+        st.markdown('</div>', unsafe_allow_html=True)
+
     else:
         st.error("Error al descargar los datos de mercado. Revisa la conexión o los símbolos de los activos.")
