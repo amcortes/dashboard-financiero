@@ -69,10 +69,22 @@ ticker1 = opciones_tickers[seleccion1]
 seleccion2 = st.sidebar.selectbox("Selecciona el Activo a Comparar:", list(opciones_tickers.keys()), index=9) # BBVA
 ticker2 = opciones_tickers[seleccion2]
 
-# 🔄 Carga automática de datos
+st.sidebar.markdown("---")
+
+# 📅 Configuración de Rango Temporal en la barra lateral
+opciones_tiempo = {
+    "3 Meses": 90,
+    "6 Meses": 180,
+    "1 Año": 365,
+    "5 Años": 5 * 365
+}
+rango_elegido = st.sidebar.selectbox("Selecciona el Rango Temporal:", list(opciones_tiempo.keys()), index=2) # Por defecto 1 Año
+dias_restar = opciones_tiempo[rango_elegido]
+
+# 🔄 Carga automática de datos según activos y tiempo seleccionado
 with st.spinner("Descargando datos en vivo..."):
     fecha_fin = datetime.now()
-    fecha_inicio = fecha_fin - timedelta(days=365)
+    fecha_inicio = fecha_fin - timedelta(days=dias_restar)
     
     # Descarga de los 4 elementos necesarios
     datos1 = yf.download(ticker1, start=fecha_inicio, end=fecha_fin)
@@ -105,7 +117,7 @@ with st.spinner("Descargando datos en vivo..."):
         p_act_st, v_dir_st, mx_st, mn_st, vol_st, c_st = calcular_metricas(datos_stoxx, "^STOXX50E")
 
         # 🔵 BLOQUE DE TARJETAS INFORMATIVAS EN COLUMNAS COMPARATIVAS
-        st.subheader("📋 Cuadro Comparativo de Indicadores Actuales")
+        st.subheader(f"📋 Cuadro Comparativo de Indicadores ({rango_elegido})")
         
         # Fila de Nombres de Columnas
         col_lbl, col_a1, col_a2, col_ib, col_st = st.columns([1.5, 2, 2, 2, 2])
@@ -134,7 +146,7 @@ with st.spinner("Descargando datos en vivo..."):
         
         # Fila 3: Volatilidad Anual
         vo_lbl, vo_a1, vo_a2, vo_ib, vo_st = st.columns([1.5, 2, 2, 2, 2])
-        vo_lbl.markdown("**📉 Volatilidad Anual**")
+        vo_lbl.markdown(f"**📉 Volatilidad ({rango_elegido})**")
         vo_a1.metric("", f"{vol1:.2f}%")
         vo_a2.metric("", f"{vol2:.2f}%")
         vo_ib.metric("", f"{vol_ib:.2f}%")
@@ -143,7 +155,6 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown("---")
         
         # 🧮 CÁLCULO DE COMPARACIÓN CUÁDRUPLE (Rendimiento Acumulado %)
-        # Nos aseguramos de extraer el cierre de cada uno como una Serie limpia de Pandas
         s1 = datos1['Close'].iloc[:, 0] if isinstance(datos1['Close'], pd.DataFrame) else datos1['Close']
         s2 = datos2['Close'].iloc[:, 0] if isinstance(datos2['Close'], pd.DataFrame) else datos2['Close']
         s_ib = datos_ibex['Close'].iloc[:, 0] if isinstance(datos_ibex['Close'], pd.DataFrame) else datos_ibex['Close']
@@ -155,16 +166,16 @@ with st.spinner("Descargando datos en vivo..."):
         # Asignamos los nombres correctos a las columnas
         df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
         
-        # Eliminamos filas con datos incompletos (como días festivos locales)
+        # Eliminamos filas con datos incompletos
         df_comparativo = df_comparativo.dropna()
         
-        # Calculamos el rendimiento acumulado partiendo de base 0%
+        # Calculamos el rendimiento acumulado partiendo de base 0% en la primera fecha del rango elegido
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
-        st.subheader("📈 Análisis de Rendimiento Acumulado")
-        st.markdown("*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
+        st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
+        st.markdown(f"*Evolución en porcentaje (%) partiendo desde el mismo punto inicial (hace {rango_elegido}) para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
-       
+        
     else:
         st.error("Error al descargar los datos de mercado. Revisa la conexión o los símbolos de los activos.")
