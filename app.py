@@ -143,12 +143,19 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown("---")
         
         # 🧮 CÁLCULO DE COMPARACIÓN CUÁDRUPLE (Rendimiento Acumulado %)
-        df_comparativo = pd.DataFrame({
-            seleccion1: c1,
-            seleccion2: c2,
-            "IBEX 35": c_ib,
-            "EURO STOXX 50": c_st
-        }).dropna()
+        precios_cierre2 = datos2[('Close', ticker2)]
+        precios_ibex = datos_ibex['Close']
+        if isinstance(precios_ibex, pd.DataFrame):
+            precios_ibex = precios_ibex.iloc[:, 0]
+            
+        # 🤝 Unimos las 4 series de forma robusta alineando por sus fechas
+        df_comparativo = pd.concat([c1, c2, c_ib, c_st], axis=1)
+        
+        # Asignamos nombres limpios a las columnas del gráfico
+        df_comparativo.columns = [seleccion1, seleccion2, "IBEX 35", "EURO STOXX 50"]
+        
+        # Eliminamos días festivos o sin datos comunes
+        df_comparativo = df_comparativo.dropna()
         
         # Base 0% para todas las series financieras
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
