@@ -11,34 +11,31 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-# 🎨 INYECCIÓN DE CSS PARA EL ESTILO FACEBOOK
 st.markdown("""
 <style>
-    /* Fondo principal de la app */
+    /* Fondo global gris muy claro */
     .stApp {
         background-color: #F0F2F5;
     }
     
-    /* Fondo de la barra lateral */
-    [data-testid="stSidebar"] {
+    /* Estilo para las tarjetas de contenido */
+    .css-card {
         background-color: #FFFFFF;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
     }
+
+    /* Ajuste de colores de texto */
+    h1, h2, h3 { color: #1C1E21 !important; }
     
-    /* Títulos y textos principales */
-    h1, h2, h3, p {
-        color: #050505 !important;
-    }
-    
-    /* Botones y elementos primarios (Azul Facebook) */
-    .stButton>button {
+    /* Estilo del botón de la barra lateral */
+    div.stButton > button {
         background-color: #1877F2 !important;
         color: white !important;
-        border: none !important;
-    }
-    
-    /* Tarjetas de métricas */
-    [data-testid="stMetricValue"] {
-        color: #1877F2 !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -216,11 +213,12 @@ with st.spinner("Descargando datos en vivo..."):
         df_rendimiento = ((df_comparativo / df_comparativo.iloc[0]) - 1) * 100
         
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
         st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
-        
-        st.markdown("---")
+        st.markdown('</div>', unsafe_allow_html=True)
+        # st.markdown("---")
         
         # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
         st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
