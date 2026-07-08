@@ -218,7 +218,6 @@ with st.spinner("Descargando datos en vivo..."):
         st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
         st.line_chart(df_rendimiento)
         st.markdown('</div>', unsafe_allow_html=True)
-        # st.markdown("---")
         
         # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
         st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
