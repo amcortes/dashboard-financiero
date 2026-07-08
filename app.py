@@ -215,9 +215,7 @@ with st.spinner("Descargando datos en vivo..."):
         # 🟡 Bloque de Gráfico Interactivo Cuádruple
         st.subheader(f"📈 Análisis de Rendimiento Acumulado ({rango_elegido})")
         st.markdown(f"*Evolución en porcentaje (%) partiendo desde la misma base inicial para analizar el comportamiento relativo.*")
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.line_chart(df_rendimiento)
-        st.markdown('</div>', unsafe_allow_html=True)
         
         # 📊 NUEVO: TABLA DE ESTADÍSTICOS DESCRIPTIVOS
         st.subheader(f"🧮 Laboratorio Estadístico de Rendimientos ({rango_elegido})")
@@ -239,9 +237,7 @@ with st.spinner("Descargando datos en vivo..."):
         })
         
         # Dar formato de dos decimales a los datos numéricos de la tabla
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
         st.dataframe(df_descriptivo.style.format("{:,.2f}"))
-        st.markdown('</div>', unsafe_allow_html=True)
 
     else:
         st.error("Error al descargar los datos de mercado. Revisa la conexión o los símbolos de los activos.")
