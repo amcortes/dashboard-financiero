@@ -37,7 +37,7 @@ def obtener_mercado_continuo():
         return diccionario_activos
     except Exception as e:
         print(f"Error alternativo: {e}")
-        return {"Banco Santander (SAN.MC)": "SAN.MC", "BBVA (BBVA.MC)": "BBVA.MC", "Telefónica (TEF.MC)": "TEF.MC"}
+        return {"Banco (SAN.MC)": "SAN.MC", "BBVA (BBVA.MC)": "BBVA.MC", "Telefónica (TEF.MC)": "TEF.MC"}
 
 # Llamamos a la función para cargar los activos dinámicos
 opciones_tickers = obtener_mercado_continuo()
