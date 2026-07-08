@@ -9,43 +9,34 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
+
 import pandas as pd
 
-@st.cache_data(ttl=86400)  # Guarda la lista en memoria durante 24h para que la web cargue ultra rápido
+@st.cache_data(ttl=86400)
 def obtener_mercado_continuo():
     try:
-        # Lee las tablas de la página de Wikipedia del Mercado Continuo
-        url = "https://es.wikipedia.org/wiki/Mercado_Continuo_Espa%C3%B1ol"
-        tablas = pd.read_html(url)
+        # Enlace directo a un listado limpio de tickers del Mercado Continuo
+        url = "https://raw.githubusercontent.com/datasets/spain-mercado-continuo/master/data/tickers.csv"
+        df = pd.read_csv(url)
         
-        # La tabla principal suele ser la primera o segunda (índice 0 o 1)
-        # Buscamos la tabla que contenga la columna 'Ticker' o 'Empresa'
-        df = None
-        for t in tablas:
-            if 'Ticker' in t.columns:
-                df = t
-                break
-        
-        if df is not None:
-            # Creamos el diccionario dinámico: "Nombre de Empresa (TICKER.MC)": "TICKER.MC"
-            diccionario_activos = {}
-            for _, fila in df.iterrows():
-                ticker_raw = str(fila['Ticker']).strip()
-                empresa = str(fila['Empresa']).strip()
+        diccionario_activos = {}
+        for _, fila in df.iterrows():
+            # Extraemos el ticker y el nombre de la empresa
+            ticker = str(fila['ticker']).strip()
+            nombre = str(fila['name']).strip()
+            
+            # Aseguramos el sufijo .MC para Yahoo Finance
+            if not ticker.endswith('.MC'):
+                ticker_yf = f"{ticker}.MC"
+            else:
+                ticker_yf = ticker
                 
-                # Nos aseguramos de que el ticker termine en .MC (formato Yahoo Finance)
-                if not ticker_raw.endswith('.MC'):
-                    ticker_yf = f"{ticker_raw}.MC"
-                else:
-                    ticker_yf = ticker_raw
-                    
-                nombre_menu = f"{empresa} ({ticker_yf})"
-                diccionario_activos[nombre_menu] = ticker_yf
-                
-            return diccionario_activos
+            nombre_menu = f"{nombre} ({ticker_yf})"
+            diccionario_activos[nombre_menu] = ticker_yf
+            
+        return diccionario_activos
     except Exception as e:
-        print(f"Error al conectar con Wikipedia: {e}")
-        # Si Wikipedia falla por algún motivo, devolvemos una lista de emergencia para que la web no se rompa
+        print(f"Error alternativo: {e}")
         return {"Banco Santander (SAN.MC)": "SAN.MC", "BBVA (BBVA.MC)": "BBVA.MC", "Telefónica (TEF.MC)": "TEF.MC"}
 
 # Llamamos a la función para cargar los activos dinámicos
